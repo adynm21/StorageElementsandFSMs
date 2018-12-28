@@ -1,0 +1,363 @@
+//PART I
+//Coding a Gated D-Latch, a posedge triggered D Flip-Flop, and a negedge triggered D Flip-Flop.
+
+module lab5part1(D,Clock,Q1,Q2,Q3);
+	input D,Clock;
+	output Q1,Q2,Q3;
+	
+	D_Latch DL(D, Clock, Q1); 
+	D_Positive_FF DP(D, Clock, Q2);
+	D_Negative_FF DN(D, Clock, Q3);
+endmodule
+
+module D_Latch(D, clock, Q);
+	input D, clock;
+	output reg Q;
+	always @(D,clock)
+	begin
+		if (clock == 1) begin
+			Q = D;
+		end
+	end
+endmodule 
+
+module D_Positive_FF(D, clock, Q);
+	input D, clock;
+	output reg Q;
+	always @(posedge clock)
+	begin
+		Q <= D;
+	end
+endmodule
+
+module D_Negative_FF(D, clock, Q);
+	input D, clock;
+	output reg Q;
+	always @(negedge clock)
+	begin
+		Q <= D;
+	end
+endmodule 
+
+//PART II
+//Displaying two numbers and their sums on the hex display.
+
+module lab5part2(KEY1,KEY0,SW,HEX5,HEX4,HEX3,HEX2,HEX1,HEX0,LEDR);
+	input KEY1,KEY0;
+	input [8:0]SW;
+	output LEDR[9:0];
+	output [5:0]HEX5,HEX4,HEX3,HEX2,HEX1,HEX0;
+
+	wire [7:0]Q,S;
+	assign LEDR[9:1] = 0;
+
+	D_Pos_FF_Reset FF(SW[7:0],KEY0,Q,SW[8]);
+	Eightbit_ripple add(SW[7:0],Q,0,S,LEDR[0];
+	hexdisp S1(S[7:4],HEX5);
+	hexdisp S0(S[3:0],HEX4);
+	hexdisp A1(Q[7:4],HEX3);
+	hexdisp A0(Q[3:0],HEX2);
+	hexdisp B1(SW[7:4],HEX1);
+	hexdisp B0(SW[3:0],HEX0);
+endmodule
+
+module hexdisp(h,Display)
+	input [3:0]h;
+	output reg [6:0]Display;
+	
+	always @(*) 
+		case (h)
+			4'h0: Display = 7'b100_0000;
+			4'h1: Display = 7'b111_1001;
+			4'h2: Display = 7'b010_0100;
+         4'h3: Display = 7'b011_0000;
+         4'h4: Display = 7'b001_1001;
+         4'h5: Display = 7'b001_0010;
+         4'h6: Display = 7'b000_0010;
+         4'h7: Display = 7'b111_1000;
+         4'h8: Display = 7'b000_0000;
+         4'h9: Display = 7'b001_1000;
+         4'hA: Display = 7'b000_1000;
+         4'hB: Display = 7'b000_0011;
+         4'hC: Display = 7'b100_0110;
+         4'hD: Display = 7'b010_0001;
+         4'hE: Display = 7'b000_0110;
+         4'hF: Display = 7'b000_1110;   
+         default: Display = 7'h7f;
+		endcase
+endmodule
+
+module Eightbit_ripple(B,A,cin,S,cout);
+	input [7:0]B,A;
+	input cin;
+	output [9:0]S;
+	output cout;
+
+	wire(c1,c2,c3,c4,c5,c6,c7,c8);
+
+	fulladder FA0(B[0],A[0],cin,c1,S[0]);
+	fulladder FA1(B[1],A[1],c1,c2,S[1]);
+	fulladder FA2(B[2],A[2],c2,c3,S[2]);
+	fulladder FA3(B[3],A[3],c3,c4,S[3]);
+	fulladder FA4(B[4],A[4],c4,c5,S[4]);
+	fulladder FA5(B[5],A[5],c5,c6,S[5]);
+	fulladder FA6(B[6],A[6],c6,c7,S[6]);
+	fulladder FA7(B[7],A[7],c7,cout,S[7]);
+endmodule
+	
+module fulladder(b,a,ci,co,s);
+	input b,a,ci;
+	output co,s;
+
+	assign co = (a&ci)|(b&ci)|(b&a);
+	assign s = a^b^ci;
+endmodule
+
+module D_Pos_FF_Reset(D,clock,Q,resetN);
+	input D, clock, resetN;
+	output reg Q;
+	always @(posedge clock or negedge resetN) begin
+		if (resetN == 0) begin
+			Q <= 1'b0;
+		else
+			Q <= D;
+		end
+	end
+endmodule 
+
+//PART III
+//Synchronous 8-bit counter using toggle flip-flops
+
+module lab5part3(KEY0,SW,HEX1,HEX0);
+	input KEY0;
+	input [1:0]SW;
+	output [6:0]HEX1,HEX0;
+	
+	wire q1,q2,q3,q4,q5,q6,q7,q8,x1,x2,x3,x4,x5,x6,x7,x8;
+	wire [4:0] h1,h0;
+	
+	// Need 8 Flip Flops for the counter, note that the output (xi) of Si becomes the input of S(i+1)
+	D_FF S0(SW[1],KEY0,SW[0],q1,x1);
+	D_FF S1(x1,KEY0,SW[0],q2,x2);
+	D_FF S2(x2,KEY0,SW[0],q3,x3);
+	D_FF S3(x3,KEY0,SW[0],q4,x4);
+	D_FF S4(x4,KEY0,SW[0],q5,x5);
+	D_FF S5(x5,KEY0,SW[0],q6,x6);
+	D_FF S6(x6,KEY0,SW[0],q7,x7);
+	D_FF S7(x7,KEY0,SW[0],q8,x8);
+	
+	// Assigning the hex display
+	assign h0 = {q4,q3,q2,q1};
+	assign h1 = {q8,q7,q6,q5};
+
+	hexdisp H0(h0,HEX0);
+	hexdisp H1(h1,HEX1);
+
+endmodule
+
+module D_FF(E,clock,ResetN,q,X);
+	input E,clock,ResetN;
+	output X;
+	output reg q;
+	always@(negedge ResetN or posedge clock)
+	begin
+		if(~ResetN)  // if 
+			q<=1'b0;
+		else 
+			q<=E;
+	end
+	assign X = E&q;
+endmodule
+
+//PART IV
+//Counter that simply adds 1 to its value instead of using toggle flip-flops.
+
+module lab5part4(SW,KEY0,HEX3,HEX2,HEX1,HEX0);
+	input SW[1],SW[0],KEY0;
+	output [6:0]HEX3,HEX2,HEX1,HEX0;
+	
+	wire [15:0]Q;
+	
+	counter_accum S1(Q,SW[1],KEY0,SW[0]);
+	
+	hexdisp H3(Q[15:12],HEX3);
+	hexdisp H2(Q[11:8],HEX2);
+	hexdisp H1(Q[7:4],HEX1);
+	hexdisp H0(Q[3:0],HEX0);
+endmodule
+
+module counter_accum(out,enable,clock,reset);
+	input enables,clock,reset;
+	output [15:0] out;
+	
+	reg [7:0] out;
+	
+	always@(posedge clock)
+		if (reset)
+			out <= 8'b0;
+		else if (enable)
+			out <= out + 1;
+endmodule
+module labfivenew(HEX0,KEY,CLOCK_50);
+ input CLOCK_50;
+ input [3:0]KEY;
+ output [6:0]HEX0;
+ 
+ wire f;
+ wire [15:0] d;
+ 
+ second_clock S1(CLOCK_50,f,KEY[0]);
+ 
+ counter_accum S2(d,f,CLOCK_50,1);
+ part5_display D1(d[3:0],HEX0);
+endmodule
+module counter_accum(out,enable,clock,reset);
+ input enable,clock,reset;
+ output reg [15:0] out;
+ 
+ always@(posedge clock or negedge reset)
+  if (reset==0)
+   out[15:0] <= 8'b0000000000000000;
+  else if (enable)
+   if (out == 9)
+    out[15:0]<= 8'b0000000000000000;
+   else
+    out <= out + 1'b1;
+endmodule
+module part5_display(h,Display);
+ input [3:0]h;
+ output reg [6:0]Display;
+ always @(*)
+  case (h)
+   4'h0: Display = 7'b100_0000;
+   4'h1: Display = 7'b111_1001;
+   4'h2: Display = 7'b010_0100;
+         4'h3: Display = 7'b011_0000;
+         4'h4: Display = 7'b001_1001;
+         4'h5: Display = 7'b001_0010;
+         4'h6: Display = 7'b000_0010;
+         4'h7: Display = 7'b111_1000;
+         4'h8: Display = 7'b000_0000;
+         4'h9: Display = 7'b001_1000;
+              
+         default: Display = 7'h09;
+      endcase
+endmodule
+module second_clock(Clock,f,ResetN);
+ input Clock, ResetN;
+ output reg f;
+ 
+ reg [25:0]z;
+ 
+ always@(posedge Clock or negedge ResetN)
+ begin
+  if (ResetN==0)
+   z <= 26'b0;
+  else if (z == 26'b11111111111111111111111111)
+  begin
+   f <= 1'b1;
+   z <= 26'b0;
+  end
+  else
+  begin
+   f <= 1'b0;
+   z <= z + 1;
+  end
+ end
+endmodule
+module mux_2bit_3to1(S,U,V,W,M);
+ input[1:0]S,U,V,W;
+ output[1:0] M;
+ 
+ assign M[1] = (~S[1] & ~S[0] & U[1]) | (~S[1] & S[0] & V[1]) | (S[1] & ~S[0] & W[1]);
+ assign M[0] = (~S[1] & ~S[0] & U[0]) | (~S[1] & S[0] & V[0]) | (S[1] & ~S[0] & W[0]);
+endmodule
+
+//PART 5
+//Flashes digits 0 through 9 using the Hex Display.
+
+module part5(KEY,SW,HEX5,HEX4,HEX3,HEX2,HEX1,HEX0,LEDR);
+ input [1:0]KEY;
+ input [8:0]SW;
+ output [9:0]LEDR;
+ output [6:0]HEX5,HEX4,HEX3,HEX2,HEX1,HEX0;
+ wire [7:0]Q,S;
+ D_Pos_FF_Reset(SW[7:0],KEY[0],Q,KEY[1]);
+ //D_Latch FF(SW[7:0],SW[8],Q);
+ ripple_8bit add(SW[7:0],Q,0,S,LEDR[0]);
+ hex_display S1(S[7:4],HEX5);
+ hex_display S0(S[3:0],HEX4);
+ hex_display A1(Q[7:4],HEX3);
+ hex_display A0(Q[3:0],HEX2);
+ hex_display B1(SW[7:4],HEX1);
+ hex_display B0(SW[3:0],HEX0);
+ 
+endmodule
+module hex_display(h,Display);
+ input [3:0] h;
+ output reg [6:0] Display;
+ always @(*)
+  case (h)
+   4'h0: Display = 7'b100_0000;
+   4'h1: Display = 7'b111_1001;
+   4'h2: Display = 7'b010_0100;
+         4'h3: Display = 7'b011_0000;
+         4'h4: Display = 7'b001_1001;
+         4'h5: Display = 7'b001_0010;
+         4'h6: Display = 7'b000_0010;
+         4'h7: Display = 7'b111_1000;
+         4'h8: Display = 7'b000_0000;
+         4'h9: Display = 7'b001_1000;
+         4'hA: Display = 7'b000_1000;
+         4'hB: Display = 7'b000_0011;
+         4'hC: Display = 7'b100_0110;
+         4'hD: Display = 7'b010_0001;
+         4'hE: Display = 7'b000_0110;
+         4'hF: Display = 7'b000_1110;   
+         default: Display = 7'h7f;
+      endcase
+endmodule
+module ripple_8bit(B,A,cin,S,cout);
+ input [7:0]B,A;
+ input cin;
+ output [9:0]S;
+ output cout;
+ wire c1,c2,c3,c4,c5,c6,c7,c8;
+ fulladder FA0(B[0],A[0],cin,c1,S[0]);
+ fulladder FA1(B[1],A[1],c1,c2,S[1]);
+ fulladder FA2(B[2],A[2],c2,c3,S[2]);
+ fulladder FA3(B[3],A[3],c3,c4,S[3]);
+ fulladder FA4(B[4],A[4],c4,c5,S[4]);
+ fulladder FA5(B[5],A[5],c5,c6,S[5]);
+ fulladder FA6(B[6],A[6],c6,c7,S[6]);
+ fulladder FA7(B[7],A[7],c7,cout,S[7]);
+ 
+endmodule
+module fulladder(b,a,ci,co,s);
+ input b,a,ci;
+ output co,s;
+ assign co = (a&ci)|(b&ci)|(b&a);
+ assign s = (~b&~a&ci)|(b&~a&~ci)|(~b&a&~ci)|(b&a&ci);
+endmodule
+module D_Pos_FF_Reset(D,clock,Q,resetN);
+ input [7:0]D;
+ input clock, resetN;
+ output reg [7:0]Q;
+ always@(posedge clock or negedge resetN)
+ begin
+  if (resetN==0)
+   Q[7:0]<=8'b00000000;
+  else
+   Q[7:0]<=D[7:0];
+ end
+endmodule
+/*
+module D_Latch(D,clock,Q);
+ input [7:0]D,clock;
+ output reg [7:0]Q;
+ always@(D,clock)
+ begin
+  if (clock == 1)
+   Q[7:0]<=D[7:0];
+ end
+endmodule
